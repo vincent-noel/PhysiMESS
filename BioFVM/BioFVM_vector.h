@@ -139,6 +139,9 @@ void vector_to_list( const std::vector<double>& vect , char*& buffer , char deli
 
 void vector3_to_list( const std::vector<double>& vect , char*& buffer , char delim ); 
 
+std::vector<double> CrossProduct(std::vector<double> vector_A, std::vector<double> vector_B, std::vector<double>& C_P); // PhysiMESS vector function to find cross products
+double DotProduct(std::vector<double> vector_A, std::vector<double> vector_B); // PhysiMESS vector function to find dot products
+
 };
 
 #endif

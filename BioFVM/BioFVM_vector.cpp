@@ -484,4 +484,21 @@ void vector3_to_list( const std::vector<double>& vect , char*& buffer , char del
 	return; 
 }
 
+std::vector<double> CrossProduct(std::vector<double> vector_A,
+                                       std::vector<double> vector_B,
+                                       std::vector<double> &C_P) {
+    C_P[0] = vector_A[1] * vector_B[2] - vector_A[2] * vector_B[1];
+    C_P[1] = -(vector_A[0] * vector_B[2] - vector_A[2] * vector_B[0]);
+    C_P[2] = vector_A[0] * vector_B[1] - vector_A[1] * vector_B[0];
+    return C_P;
+}
+
+double DotProduct(std::vector<double> vector_A, std::vector<double> vector_B) {
+    double dotproduct = 0;
+    for (int i = 0; i < 3; i++) {
+        dotproduct = dotproduct + vector_A[i] * vector_B[i];
+    }
+    return dotproduct;
+}
+
 };
