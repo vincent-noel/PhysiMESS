@@ -12,24 +12,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     
-    - name: Install dependencies
-      run: sudo apt-get install flex bison
-      
-    - name: Build Virus Macrophage project
+    - name: Build PhysiMeSS
       run: |
-        make virus-macrophage-sample
-        make
+        make 
         
-    - name: Run Virus Macrophage cell lines project
+    - name: Run all examples
       run: |
-        ./virus-sample
-        
-    - name: Build PhysiBoSS cell lines project
-      run: |
-        make reset
-        make physiboss-cell-lines-sample
-        make clean
-        make
+        ./project config/mymodel.xml
         
     - name: Run PhysiBoSS cell lines project
       run: |

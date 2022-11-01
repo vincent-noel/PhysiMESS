@@ -19,24 +19,12 @@ jobs:
     - uses: msys2/setup-msys2@v2
       with:
         update: true
-        install: base-devel flex bison gcc make diffutils mingw-w64-x86_64-toolchain
+        install: base-devel gcc make diffutils mingw-w64-x86_64-toolchain
         
-    - name: Build Virus Macrophage project
+    - name: Build PhysiMeSS
       run: |
-        make virus-macrophage-sample
         make
         
-    - name: Run Virus Macrophage cell lines project
+    - name: Run all examples
       run: |
-        .\\virus-sample.exe
-        
-    - name: Build PhysiBoSS cell lines project
-      run: |
-        make reset
-        make physiboss-cell-lines-sample
-        make clean
-        make 
-      
-    - name: Run PhysiBoSS cell lines project
-      run: |
-        .\\PhysiBoSS_Cell_Lines.exe
+        .\\project config\\mymodel.xml
