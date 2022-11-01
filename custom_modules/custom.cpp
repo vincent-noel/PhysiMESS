@@ -203,6 +203,90 @@ void setup_tissue( void ){
                 (*all_cells)[i]->state.orientation = UniformOnUnitSphere();
             }
 
+            // start and end points of a fibre are calculated from fibre center
+            double xs = (*all_cells)[i]->position[0] -
+                        (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[0];
+            double xe = (*all_cells)[i]->position[0] +
+                        (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[0];
+            double ys = (*all_cells)[i]->position[1] -
+                        (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[1];
+            double ye = (*all_cells)[i]->position[1] +
+                        (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[1];
+            double zs = 0.0;
+            double ze = 0.0;
+            if (default_microenvironment_options.simulate_2D) {
+                /*std::cout << " fibre endpoints in 2D are " << xs << " " << ys <<
+                               " and " << xe << " " << ye << std::endl; */
+            }
+            else if (!default_microenvironment_options.simulate_2D) {
+                zs = (*all_cells)[i]->position[2] -
+                     (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[2];
+                ze = (*all_cells)[i]->position[2] +
+                     (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[2];
+                /*std::cout << " fibre endpoints in 3D are " << xs << " " << ys << " " << zs <<
+                               " and " << xe << " " << ye << " " << ze << std::endl; */
+            }
+
+            /* check whether a fibre end point leaves the domain and if so initialise fibre again
+                     assume user placed the centre of fibre within the domain so reinitialise orientation,
+                     break after 10 failures
+                     It needs re-writing at some stage to handle the 3D case properly */
+
+            if (fibreanisotropy) {
+                if (xs < Xmin || xe > Xmax || xe < Xmin || xs > Xmax ||
+                    ys < Ymin || ye > Ymax || ye < Ymin || ys > Ymax) {
+                        (*all_cells)[i]->parameters.fail_count = 10;
+                }
+            }
+            else{
+                if (default_microenvironment_options.simulate_2D) {
+                    while ((*all_cells)[i]->parameters.fail_count < 10) {
+                        if (xs < Xmin || xe > Xmax || xe < Xmin || xs > Xmax ||
+                            ys < Ymin || ye > Ymax || ye < Ymin || ys > Ymax) {
+                            (*all_cells)[i]->parameters.fail_count++;
+                            (*all_cells)[i]->state.orientation = UniformOnUnitCircle();
+                            xs = (*all_cells)[i]->position[0] -
+                                 (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[0];
+                            xe = (*all_cells)[i]->position[0] +
+                                 (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[0];
+                            ys = (*all_cells)[i]->position[1] -
+                                 (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[1];
+                            ye = (*all_cells)[i]->position[1] +
+                                 (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[1];
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                }
+
+                if (!default_microenvironment_options.simulate_2D) {
+                    while ((*all_cells)[i]->parameters.fail_count < 10) {
+                        if (xs < Xmin || xe > Xmax || xe < Xmin || xs > Xmax ||
+                            ys < Ymin || ye > Ymax || ye < Ymin || ys > Ymax ||
+                            zs < Zmin || ze > Zmax || ze < Xmin || zs > Xmax) {
+                            (*all_cells)[i]->parameters.fail_count++;
+                            (*all_cells)[i]->state.orientation = UniformOnUnitSphere();
+                            xs = (*all_cells)[i]->position[0] -
+                                 (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[0];
+                            xe = (*all_cells)[i]->position[0] +
+                                 (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[0];
+                            ys = (*all_cells)[i]->position[1] -
+                                 (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[1];
+                            ye = (*all_cells)[i]->position[1] +
+                                 (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[1];
+                            zs = (*all_cells)[i]->position[2] -
+                                 (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[2];
+                            ze = (*all_cells)[i]->position[2] +
+                                 (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[2];
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                }
+            }
+
             // relabel so that the rest of the code works (HACK)
             // or we could possibly use string find throughout code instead?!
             (*all_cells)[i]->type_name = "fibre";
@@ -276,6 +360,78 @@ void setup_tissue( void ){
                         pC->state.orientation = UniformOnUnitSphere();
                     }
 
+                    // start and end points of a fibre are calculated from fibre center
+                    double xs = position[0] - pC->parameters.mLength*pC->state.orientation[0];
+                    double xe = position[0] + pC->parameters.mLength*pC->state.orientation[0];
+                    double ys = position[1] - pC->parameters.mLength*pC->state.orientation[1];
+                    double ye = position[1] + pC->parameters.mLength*pC->state.orientation[1];
+                    double zs = 0.0;
+                    double ze = 0.0;
+                    if( !default_microenvironment_options.simulate_2D) {
+                        zs = position[2] - pC->parameters.mLength * pC->state.orientation[2];
+                        ze = position[2] + pC->parameters.mLength * pC->state.orientation[2];
+                    }
+
+                    /* check whether a fibre end point leaves the domain and if so initialise fibre again
+                     assume user placed the centre of fibre within the domain so reinitialise orientation,
+                     break after 10 failures
+                     It needs re-writing at some stage to handle the 3D case properly */
+
+                    if (fibreanisotropy) {
+                        if (xs < Xmin || xe > Xmax || xe < Xmin || xs > Xmax ||
+                            ys < Ymin || ye > Ymax || ye < Ymin || ys > Ymax) {
+                            pC->parameters.fail_count = 10;
+                        }
+                    }
+                    else {
+                        if (default_microenvironment_options.simulate_2D) {
+                            while (pC->parameters.fail_count < 10) {
+                                if (xs < Xmin || xe > Xmax || xe < Xmin || xs > Xmax ||
+                                    ys < Ymin || ye > Ymax || ye < Ymin || ys > Ymax) {
+                                    pC->parameters.fail_count++;
+                                    pC->state.orientation = UniformOnUnitCircle();
+                                    xs = position[0] -
+                                         pC->parameters.mLength * pC->state.orientation[0];
+                                    xe = position[0] +
+                                         pC->parameters.mLength * pC->state.orientation[0];
+                                    ys = position[1] -
+                                         pC->parameters.mLength * pC->state.orientation[1];
+                                    ye = position[1] +
+                                         pC->parameters.mLength * pC->state.orientation[1];
+                                }
+                                else {
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!default_microenvironment_options.simulate_2D) {
+                            while (pC->parameters.fail_count < 10) {
+                                if (xs < Xmin || xe > Xmax || xe < Xmin || xs > Xmax ||
+                                    ys < Ymin || ye > Ymax || ye < Ymin || ys > Ymax ||
+                                    zs < Zmin || ze > Zmax || ze < Zmin || zs > Zmax) {
+                                    pC->parameters.fail_count++;
+                                    pC->state.orientation = UniformOnUnitSphere();
+                                    xs = position[0] -
+                                         pC->parameters.mLength * pC->state.orientation[0];
+                                    xe = position[0] +
+                                         pC->parameters.mLength * pC->state.orientation[0];
+                                    ys = position[1] -
+                                         pC->parameters.mLength * pC->state.orientation[1];
+                                    ye = position[1] +
+                                         pC->parameters.mLength * pC->state.orientation[1];
+                                    zs = position[2] -
+                                         pC->parameters.mLength * pC->state.orientation[2];
+                                    ze = position[2] +
+                                         pC->parameters.mLength * pC->state.orientation[2];
+                                }
+                                else {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
                     pC->assign_position(position);
 
                     // relabel so that the rest of the code works (HACK)
@@ -287,6 +443,17 @@ void setup_tissue( void ){
 		}
 
 	}
+
+    int number_of_agents = (*all_cells).size();
+    for( int i=0; i < number_of_agents; i++ ){
+        if ((*all_cells)[i]->parameters.fail_count >= 10) {
+            std::cout << "I failed to place " << (*all_cells)[i]->type_name << " " <<
+                          (*all_cells)[i]->ID << " in the domain - I am deleting agent " << std::endl;
+            delete_cell((*all_cells)[i]);
+        }
+    }
+
+    std::cout << std::endl;
 }
 
 std::vector<std::string> my_coloring_function( Cell* pCell )
