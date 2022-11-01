@@ -5,7 +5,7 @@ on:
   pull_request:
     
 jobs:
-  build_virus_macrophage:
+  build_physimess:
 
     runs-on: macos-11
 
@@ -15,15 +15,13 @@ jobs:
     - name: Install dependencies
       run : brew install gcc@10
 
-    - name: Build Virus Macrophage project
+    - name: Build PhysiMeSS
       run: |
-        make virus-macrophage-sample
         make PHYSICELL_CPP=g++-10
         
-    - name: Run Virus Macrophage cell lines project
+    - name: Run all examples
       run: |
-        ./virus-sample
-
+        ./project config/mymodel.xml
 
   build_physiboss_cell_lines:
 
