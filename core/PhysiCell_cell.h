@@ -114,6 +114,8 @@ class Cell_Parameters
 	
     double mLength = 0; // PhysiMESS
     double mRadius = 0; // PhysiMESS
+
+    int fail_count = 0; // PhysiMESS
 	Cell_Parameters(); 
 }; 
 
