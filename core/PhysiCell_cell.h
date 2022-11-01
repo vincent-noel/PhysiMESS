@@ -77,7 +77,8 @@
 
 #include "../modules/PhysiCell_settings.h" 
 
-#include "./PhysiCell_standard_models.h" 
+#include "./PhysiCell_standard_models.h"
+#include <list>
 
 using namespace BioFVM; 
 
@@ -111,6 +112,8 @@ class Cell_Parameters
 	double max_necrosis_rate; // deprecate
 	int necrosis_type; // deprecate 
 	
+    double mLength = 0; // PhysiMESS
+    double mRadius = 0; // PhysiMESS
 	Cell_Parameters(); 
 }; 
 
@@ -289,6 +292,8 @@ void detach_cells( Cell* pCell_1 , Cell* pCell_2 );
 std::vector<Cell*> find_nearby_cells( Cell* pCell ); // new in 1.8.0
 std::vector<Cell*> find_nearby_interacting_cells( Cell* pCell ); // new in 1.8.0
 
+std::list<int> register_fibre_voxels( Cell* pCell ); // PhysiMESS
+void deregister_fibre_voxels( Cell* pCell ); // PhysiMESS
 };
 
 #endif
