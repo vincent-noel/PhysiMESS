@@ -3249,6 +3249,74 @@ int find_cell_definition_index( int search_type )
 	return -1; 
 }  
 
+std::list<int> register_fibre_voxels(Cell *pCell) {
+
+    std::list<int> agent_voxels;
+    int voxel;
+
+    //only do this for fibres
+    if (pCell->type_name != "fibre") {
+        voxel = pCell->get_container()->underlying_mesh.nearest_voxel_index(pCell->position);
+        agent_voxels.push_back(voxel);
+    }
+
+    if (pCell->type_name == "fibre") {
+        int voxel_size = 30; // note this must be the same as the mechanics_voxel_size
+        int test = 2.0 * pCell->parameters.mLength / voxel_size; //allows us to sample along the fibre
+
+        std::vector<double> fibre_start(3, 0.0);
+        std::vector<double> fibre_end(3, 0.0);
+        for (unsigned int i = 0; i < 3; i++) {
+            fibre_start[i] = pCell->position[i] - pCell->parameters.mLength * pCell->state.orientation[i];
+            fibre_end[i] = pCell->position[i] + pCell->parameters.mLength * pCell->state.orientation[i];
+        }
+        // first add the voxel of the fibre end point
+        voxel = pCell->get_container()->underlying_mesh.nearest_voxel_index(fibre_end);
+        agent_voxels.push_back(voxel);
+        if (std::find(pCell->get_container()->agent_grid[voxel].begin(),
+                      pCell->get_container()->agent_grid[voxel].end(),
+                      pCell) == pCell->get_container()->agent_grid[voxel].end()) {
+                pCell->get_container()->agent_grid[voxel].push_back(pCell);
+        }
+        // then walk along the fibre from fibre start point sampling and adding voxels as we go
+        std::vector<double> point_on_fibre(3, 0.0);
+        for (unsigned int j = 0; j < test + 1; j++) {
+            for (unsigned int i = 0; i < 3; i++) {
+                point_on_fibre[i] = fibre_start[i] + j * voxel_size * pCell->state.orientation[i];
+            }
+            voxel = pCell->get_container()->underlying_mesh.nearest_voxel_index(point_on_fibre);
+            agent_voxels.push_back(voxel);
+            if (std::find(pCell->get_container()->agent_grid[voxel].begin(),
+                          pCell->get_container()->agent_grid[voxel].end(),
+                          pCell) == pCell->get_container()->agent_grid[voxel].end()) {
+                pCell->get_container()->agent_grid[voxel].push_back(pCell);
+            }
+        }
+
+        agent_voxels.sort();
+        agent_voxels.unique();
+    }
+
+    return agent_voxels;
+}
+
+void deregister_fibre_voxels(Cell *pCell) {
+
+    //only do this for fibres
+    if (pCell->type_name != "fibre") { return;}
+
+    if (pCell->type_name == "fibre") {
+        std::list<int> voxels = register_fibre_voxels(pCell);
+        int centre_voxel = 
+               (*pCell).get_container()->underlying_mesh.nearest_voxel_index(pCell->position);
+        for (int x: voxels) {
+            if (x != centre_voxel) {
+                (*pCell).get_container()->remove_agent_from_voxel(pCell, x);
+            }
+        }
+    }
+}
+
 
 
 };
