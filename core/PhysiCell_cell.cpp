@@ -3239,10 +3239,9 @@ void deregister_fibre_voxels(Cell *pCell) {
     if (pCell->type_name != "fibre") { return;}
 
     if (pCell->type_name == "fibre") {
-        std::list<int> voxels = register_fibre_voxels(pCell);
         int centre_voxel = 
                (*pCell).get_container()->underlying_mesh.nearest_voxel_index(pCell->position);
-        for (int x: voxels) {
+        for (int x: pCell->state.voxels) {
             if (x != centre_voxel) {
                 (*pCell).get_container()->remove_agent_from_voxel(pCell, x);
             }
