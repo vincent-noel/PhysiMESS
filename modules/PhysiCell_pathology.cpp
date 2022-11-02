@@ -556,6 +556,27 @@ void SVG_plot( std::string filename , Microenvironment& M, double z_slice , doub
    
 			double plot_radius = sqrt( r*r - z*z ); 
 
+            // place a rod if it's a fibre
+            const auto agentname = std::string(pC->type_name);
+            const auto fibre = std::string("fibre");
+            const auto fiber = std::string("fiber");
+            const auto rod = std::string("rod");
+
+            if (agentname.find(fibre) != std::string::npos ||
+                agentname.find(fiber) != std::string::npos ||
+                agentname.find(rod) != std::string::npos){
+
+			
+				//Write_SVG_fibre( os, (pC->position)[0]-X_lower, (pC->position)[1]-Y_lower, plot_radius , 0.5, Colors[1], Colors[0] );
+				Write_SVG_line(os, (pC->position)[0] - (pC->parameters.mLength) * (pC->state.orientation)[0] - X_lower,
+								(pC->position)[1] - (pC->parameters.mLength) * (pC->state.orientation)[1] - Y_lower,
+								(pC->position)[0] + (pC->parameters.mLength) * (pC->state.orientation)[0] - X_lower,
+								(pC->position)[1] + (pC->parameters.mLength) * (pC->state.orientation)[1] - Y_lower,
+								4.0, "lightskyblue");
+            }
+            else{
+			// then normal cell, plot sphere if it intersects z = 0;
+
 			Write_SVG_circle( os, (pC->position)[0]-X_lower, (pC->position)[1]-Y_lower, 
 				plot_radius , 0.5, Colors[1], Colors[0] ); 
 
@@ -566,6 +587,7 @@ void SVG_plot( std::string filename , Microenvironment& M, double z_slice , doub
 			 	Write_SVG_circle( os, (pC->position)[0]-X_lower, (pC->position)[1]-Y_lower, 
 					plot_radius, 0.5, Colors[3],Colors[2]); 
 			}					  
+            }
 			os << "   </g>" << std::endl;
 		}
 		
@@ -742,11 +764,40 @@ void create_plot_legend( std::string filename , std::vector<std::string> (*cell_
 		// get the colors using the current coloring function 
 		std::vector<std::string> colors = cell_coloring_function(&C); 
 		
+        // place a rod if it's a fibre
+        const auto agentname = std::string(C.type_name);
+        const auto fibre = std::string("fibre");
+        const auto fiber = std::string("fiber");
+        const auto rod = std::string("rod");
+
+        if (agentname.find(fibre) != std::string::npos ||
+            agentname.find(fiber) != std::string::npos ||
+            agentname.find(rod) != std::string::npos){
+            //###########################################//
+            //   this bit a hack for PacMan and maze	 //
+            //###########################################//
+            if(C.type_name == "fibre_vertical")
+            {
+                Write_SVG_line(os, cursor_x, cursor_y-20.0 , cursor_x , cursor_y+20.0 , 4.0 , colors[0] );
+            }
+            else if(C.type_name == "fibre_horizontal")
+            {
+                Write_SVG_line(os, cursor_x, cursor_y-20.0 , cursor_x , cursor_y+20.0 , 4.0 , colors[0] );
+            }
+                //###########################################//
+            else
+            {
+                //Write_SVG_fibre(os, cursor_x, cursor_y , 0.5*temp_cell_radius , 1.0 , colors[1] , colors[0] );
+                Write_SVG_line(os, cursor_x, cursor_y-20.0 , cursor_x , cursor_y+20.0 , 4.0 , "lightskyblue" );
+            }
+        }
+        else {
 		// place a big circle with cytoplasm colors 
 		Write_SVG_circle(os,cursor_x, cursor_y , temp_cell_radius , 1.0 , colors[1] , colors[0] ); 
 		// place a small circle with nuclear colors 
 		Write_SVG_circle(os,cursor_x, cursor_y , 0.5*temp_cell_radius , 1.0 , colors[2] , colors[3] ); 
 		
+		}
 		// place the label 
 		
 		cursor_x += temp_cell_radius + 2*padding; 
