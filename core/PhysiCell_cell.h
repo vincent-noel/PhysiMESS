@@ -117,6 +117,9 @@ class Cell_Parameters
 
     int fail_count = 0; // PhysiMESS
 
+
+    int X_crosslink_count; //int T_crosslink_count; // PhysiMESS
+
     double mVelocityAdhesion = 0; // PhysiMESS
 
     double mVelocityContact = 0; // PhysiMESS
@@ -157,6 +160,7 @@ class Cell_State
 
 	std::vector<Cell*> neighbors; 
 	std::list<int> voxels;
+    std::vector<Cell*> crosslinkers; // PhysiMess
 	std::vector<double> orientation;
 	
 	double simple_pressure; 
@@ -168,6 +172,8 @@ class Cell_State
 	double damage; 
 	double total_attack_time; 
 	bool contact_with_basement_membrane; // not implemented yet 
+	
+    std::vector<double> crosslink_point; // PhysiMess
 	
 	Cell_State(); 
 };
@@ -193,7 +199,8 @@ class Cell : public Basic_Agent
 	void advance_bundled_phenotype_functions( double dt_ ); 
 	
 	void add_potentials(Cell*);       // Add repulsive and adhesive forces.
-    std::vector<double> nearest_point_on_fibre(std::vector<double> point, Cell* , std::vector<double>& displacement); // PhysiMESS
+	void check_fibre_crosslinks(Cell*); // PhysiMESS for use in fibre crosslink models
+	std::vector<double> nearest_point_on_fibre(std::vector<double> point, Cell* , std::vector<double>& displacement); // PhysiMESS
 	void set_previous_velocity(double xV, double yV, double zV);
 	int get_current_mechanics_voxel_index();
 	void turn_off_reactions(double); 		  // Turn off all the reactions of the cell
@@ -307,6 +314,7 @@ std::list<int> register_fibre_voxels( Cell* pCell ); // PhysiMESS
 void deregister_fibre_voxels( Cell* pCell ); // PhysiMESS
 std::list<int> find_agent_voxels(Cell * pCell ); // PhysiMESS
 void find_agent_neighbors( Cell* pCell ); // PhysiMESS
+void add_crosslinks( Cell* pCell ); // PhysiMESS
 };
 
 #endif

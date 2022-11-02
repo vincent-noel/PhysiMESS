@@ -619,6 +619,14 @@ void standard_update_cell_velocity( Cell* pCell, Phenotype& phenotype, double dt
 	}
 	
 	pCell->state.simple_pressure = 0.0; 
+
+	// Count crosslinks
+	pCell->parameters.X_crosslink_count = 0;
+	if (pCell->type_name == "fibre" && pCell->state.crosslinkers.size()  > 0){
+		//std::cout << " fibre " << pCell->ID <<  " has " << pCell->state.crosslinkers.size()  << " cross-links " << std::endl;
+		pCell->parameters.X_crosslink_count = pCell->state.crosslinkers.size();
+	}
+
 	for (auto neighbor: pCell->state.neighbors) {
 		pCell->add_potentials(neighbor);
 	}

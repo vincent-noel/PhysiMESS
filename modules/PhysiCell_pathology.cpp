@@ -566,13 +566,40 @@ void SVG_plot( std::string filename , Microenvironment& M, double z_slice , doub
                 agentname.find(fiber) != std::string::npos ||
                 agentname.find(rod) != std::string::npos){
 
-			
-				//Write_SVG_fibre( os, (pC->position)[0]-X_lower, (pC->position)[1]-Y_lower, plot_radius , 0.5, Colors[1], Colors[0] );
-				Write_SVG_line(os, (pC->position)[0] - (pC->parameters.mLength) * (pC->state.orientation)[0] - X_lower,
-								(pC->position)[1] - (pC->parameters.mLength) * (pC->state.orientation)[1] - Y_lower,
-								(pC->position)[0] + (pC->parameters.mLength) * (pC->state.orientation)[0] - X_lower,
-								(pC->position)[1] + (pC->parameters.mLength) * (pC->state.orientation)[1] - Y_lower,
-								4.0, "lightskyblue");
+                int crosslinks = pC->parameters.X_crosslink_count; //+ pC->parameters.T_crosslink_count;
+                if (crosslinks >= 3){
+                    // if fibre has cross-links different colour than if not
+                    Write_SVG_line(os, (pC->position)[0] - (pC->parameters.mLength) * (pC->state.orientation)[0] - X_lower,
+                                   (pC->position)[1] - (pC->parameters.mLength) * (pC->state.orientation)[1] - Y_lower,
+                                   (pC->position)[0] + (pC->parameters.mLength) * (pC->state.orientation)[0] - X_lower,
+                                   (pC->position)[1] + (pC->parameters.mLength) * (pC->state.orientation)[1] - Y_lower,
+                                   4.0, "darkblue");
+                }
+                else if (crosslinks == 2){
+                    // if fibre has cross-links different colour than if not
+                    Write_SVG_line(os, (pC->position)[0] - (pC->parameters.mLength) * (pC->state.orientation)[0] - X_lower,
+                                   (pC->position)[1] - (pC->parameters.mLength) * (pC->state.orientation)[1] - Y_lower,
+                                   (pC->position)[0] + (pC->parameters.mLength) * (pC->state.orientation)[0] - X_lower,
+                                   (pC->position)[1] + (pC->parameters.mLength) * (pC->state.orientation)[1] - Y_lower,
+                                   4.0, "blue");
+                }
+                else if (crosslinks == 1){
+                    // if fibre has cross-links different colour than if not
+                    Write_SVG_line(os, (pC->position)[0] - (pC->parameters.mLength) * (pC->state.orientation)[0] - X_lower,
+                                   (pC->position)[1] - (pC->parameters.mLength) * (pC->state.orientation)[1] - Y_lower,
+                                   (pC->position)[0] + (pC->parameters.mLength) * (pC->state.orientation)[0] - X_lower,
+                                   (pC->position)[1] + (pC->parameters.mLength) * (pC->state.orientation)[1] - Y_lower,
+                                   4.0, "steelblue");
+                }
+                else {
+                    //Write_SVG_fibre( os, (pC->position)[0]-X_lower, (pC->position)[1]-Y_lower, plot_radius , 0.5, Colors[1], Colors[0] );
+                    Write_SVG_line(os, (pC->position)[0] - (pC->parameters.mLength) * (pC->state.orientation)[0] - X_lower,
+                                   (pC->position)[1] - (pC->parameters.mLength) * (pC->state.orientation)[1] - Y_lower,
+                                   (pC->position)[0] + (pC->parameters.mLength) * (pC->state.orientation)[0] - X_lower,
+                                   (pC->position)[1] + (pC->parameters.mLength) * (pC->state.orientation)[1] - Y_lower,
+                                   4.0, "lightskyblue");
+                }
+
             }
             else{
 			// then normal cell, plot sphere if it intersects z = 0;

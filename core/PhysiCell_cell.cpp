@@ -226,7 +226,9 @@ Cell_Definition cell_defaults;
 Cell_State::Cell_State()
 {
 	neighbors.resize(0); 
+    crosslinkers.resize(0);
 	orientation.resize( 3 , 0.0 ); 
+	crosslink_point.resize(3,0.0);
 	
 	simple_pressure = 0.0; 
 	
@@ -966,6 +968,161 @@ std::vector<double> Cell::nearest_point_on_fibre(std::vector<double> point, Cell
     return displacement;
 }
 
+void Cell::check_fibre_crosslinks(Cell *fibre_neighbor) {
+
+    if (this == fibre_neighbor) { return; }
+
+    if (this->type_name == "fibre" && (*fibre_neighbor).type_name == "fibre") {
+
+        // fibre endpoints
+        std::vector<double> point1(3, 0.0);
+        std::vector<double> point2(3, 0.0);
+        std::vector<double> point3(3, 0.0);
+        std::vector<double> point4(3, 0.0);
+        for (int i = 0; i < 3; i++) {
+            // endpoints of "this" fibre
+            point1[i] = this->position[i]
+                    - this->parameters.mLength * this->state.orientation[i];
+            point2[i] = this->position[i]
+                    + this->parameters.mLength * this->state.orientation[i];
+            // endpoints of "neighbor" fibre
+            point3[i] = (*fibre_neighbor).position[i]
+                    - this->parameters.mLength * (*fibre_neighbor).state.orientation[i];
+            point4[i] = (*fibre_neighbor).position[i]
+                    + this->parameters.mLength * (*fibre_neighbor).state.orientation[i];
+        }
+
+        //vectors between fibre endpoints
+        std::vector<double> p1_to_p2(3, 0.0);
+        std::vector<double> p3_to_p4(3, 0.0);
+        std::vector<double> p1_to_p3(3, 0.0);
+        std::vector<double> centre_to_centre(3, 0.0);
+        for (int i = 0; i < 3; i++) {
+            // "this" fibre vector
+            p1_to_p2[i] = point2[i] - point1[i];
+            // "neighbor" fibre vector
+            p3_to_p4[i] = point4[i] - point3[i];
+            // vector from "this" to "neighbor"
+            p1_to_p3[i] = point3[i] - point1[i];
+            // vector between fibre centres
+            centre_to_centre[i] = (*fibre_neighbor).position[i] - this->position[i];
+        }
+
+        double co_radius = this->parameters.mRadius + (*fibre_neighbor).parameters.mRadius;
+        double co_length = this->parameters.mLength + (*fibre_neighbor).parameters.mLength;
+        std::vector<double> zero(3, 0.0);
+        double distance = dist(zero, centre_to_centre);
+        normalize(&centre_to_centre);
+
+        /* test if fibres intersect
+           (1) if fibres are coplanar and parallel:
+           the cross product of the two fibre vectors is zero
+           [(P2 - P1) x (P4 - P3)].[(P2 - P1) x (P4 - P3)] = 0 */
+        std::vector<double> FCP(3, 0.0);
+        CrossProduct(p1_to_p2, p3_to_p4, FCP);
+        /* parallel fibres could intersect if approximately colinear
+           we need to take into account the radius of fibres */
+        if ((centre_to_centre == this->state.orientation ||
+             centre_to_centre == -1.0 * this->state.orientation) &&
+             distance <= co_length) {
+            //std::cout << "fibre " << this->ID << " crosslinks end to end with fibre " <<  (*fibre_neighbor).ID << std::endl;
+            if (std::find(this->state.crosslinkers.begin(), this->state.crosslinkers.end(), (fibre_neighbor)) ==
+                this->state.crosslinkers.end()) {
+                this->state.crosslinkers.push_back(fibre_neighbor);
+            }
+            if (std::find(fibre_neighbor->state.crosslinkers.begin(), fibre_neighbor->state.crosslinkers.end(), (this)) ==
+                fibre_neighbor->state.crosslinkers.end()) {
+                fibre_neighbor->state.crosslinkers.push_back(this);
+            }
+            //this->state.crosslink_point = this->position + this->parameters.mLength * centre_to_centre;
+        }
+        std::vector<double> displacement(3, 0.0);
+        nearest_point_on_fibre(point1, fibre_neighbor, displacement);
+        double test_point1 = dist(zero, displacement);
+        nearest_point_on_fibre(point2, fibre_neighbor, displacement);
+        double test_point2 = dist(zero, displacement);
+        if (test_point1 <= co_radius &&
+            centre_to_centre != this->state.orientation &&
+            centre_to_centre != -1.0 * this->state.orientation) {
+            //std::cout << "fibre " << this->ID << " crosslinks in parallel plane with fibre " <<  (*fibre_neighbor).ID << std::endl;
+            if (std::find(this->state.crosslinkers.begin(), this->state.crosslinkers.end(), (fibre_neighbor)) ==
+                this->state.crosslinkers.end()) {
+                this->state.crosslinkers.push_back(fibre_neighbor);
+            }
+            if (std::find(fibre_neighbor->state.crosslinkers.begin(), fibre_neighbor->state.crosslinkers.end(), (this)) ==
+                fibre_neighbor->state.crosslinkers.end()) {
+                fibre_neighbor->state.crosslinkers.push_back(this);
+            }
+            //this->state.crosslink_point = point1;
+        }
+        if (test_point2 <= co_radius &&
+            centre_to_centre != this->state.orientation &&
+            centre_to_centre != -1.0 * this->state.orientation) {
+            //std::cout << "fibre " << this->ID << " crosslinks in parallel plane with fibre " <<  (*fibre_neighbor).ID << std::endl;
+            if (std::find(this->state.crosslinkers.begin(), this->state.crosslinkers.end(), (fibre_neighbor)) ==
+                this->state.crosslinkers.end()) {
+                this->state.crosslinkers.push_back(fibre_neighbor);
+            }
+            if (std::find(fibre_neighbor->state.crosslinkers.begin(), fibre_neighbor->state.crosslinkers.end(), (this)) ==
+                fibre_neighbor->state.crosslinkers.end()) {
+                fibre_neighbor->state.crosslinkers.push_back(this);
+            }
+            //this->state.crosslink_point = point2;
+        }
+        /*  (2) if fibres are skew (in parallel planes):
+            the scalar triple product (P3 - P1) . [(P2 - P1) x (P4 - P3)] != 0
+            we include a tolerance on this to allow for fibre radius */
+        double test2_tolerance = co_radius;
+        double test2 = DotProduct(p1_to_p3, FCP);
+        /*  For fibres to intersect neither (1) not (2) must be true
+            and the "t" values for both line equations must lie in [0,1]
+            again we include a tolerance to allow for fibre radius */
+        if (std::abs(test2) < test2_tolerance) {
+            double a = DotProduct(p1_to_p2, p1_to_p3) / DotProduct(p1_to_p2, p1_to_p2);
+            double b = DotProduct(p1_to_p2, p3_to_p4) / DotProduct(p1_to_p2, p1_to_p2);
+            std::vector<double> c(3, 0.0);
+            std::vector<double> n(3, 0.0);
+            for (int i = 0; i < 3; i++) {
+                c[i] = b * p1_to_p2[i] - p3_to_p4[i];
+                n[i] = p1_to_p3[i] - a * p1_to_p2[i];
+            }
+            double t_neighbor = DotProduct(c, n) / DotProduct(c, c);
+            double t_this = a + b * t_neighbor;
+            double tolerance = (*fibre_neighbor).parameters.mRadius / (2 * this->parameters.mLength);
+            double lower_bound = 0.0 - tolerance;
+            double upper_bound = 1.0 + tolerance;
+            if (lower_bound <= t_neighbor && t_neighbor <= upper_bound &&
+                lower_bound <= t_this && t_this <= upper_bound) {
+                if (std::find(this->state.crosslinkers.begin(), this->state.crosslinkers.end(), (fibre_neighbor)) ==
+                    this->state.crosslinkers.end()) {
+                    //std::cout << "fibre " << this->ID << " crosslinks with fibre " << (*fibre_neighbor).ID << std::endl;
+                    this->state.crosslinkers.push_back(fibre_neighbor);
+                }
+                if (std::find(fibre_neighbor->state.crosslinkers.begin(), fibre_neighbor->state.crosslinkers.end(), (this)) ==
+                    fibre_neighbor->state.crosslinkers.end()) {
+                    fibre_neighbor->state.crosslinkers.push_back(this);
+                }
+            }
+        }
+    } else { return; }
+}
+
+void add_crosslinks( Cell* pCell) {
+
+    if (pCell->type_name != "fibre") { return; }
+
+    // Determine all crosslinks between pCell and its neighbors provided both are fibres
+    else if (pCell->type_name == "fibre") {
+        std::vector<Cell *>::iterator f_neighbor;
+        std::vector<Cell *>::iterator f_end = pCell->state.neighbors.end();
+        for (f_neighbor = pCell->state.neighbors.begin(); f_neighbor != f_end; ++f_neighbor) {
+            if ((*f_neighbor)->type_name == "fibre") {
+                pCell->check_fibre_crosslinks(*f_neighbor);
+            }
+        }
+    }
+}
+
 void Cell::add_potentials(Cell* other_agent)
 {
 	// if( this->ID == other_agent->ID )
@@ -1169,6 +1326,12 @@ void Cell::add_potentials(Cell* other_agent)
     else if (this->type_name == "fibre" && (*other_agent).type_name != "fibre") {
         //std::cout << "fibre-cell interaction" << std::endl;
 
+        /* note fibres only get pushed by motile cells and if they have no crosslinks
+           we intend to update this to be that fibres with one crosslink pivot at the crosslink location */
+        if (!other_agent->phenotype.motility.is_motile || this->parameters.X_crosslink_count >= 2) {
+            return;
+        }
+
         /* for snow plough example uncomment from here: */
         double distance = 0.0;
         nearest_point_on_fibre((*other_agent).position, this, displacement);
@@ -1182,31 +1345,57 @@ void Cell::add_potentials(Cell* other_agent)
         // fibre should repel and be pushed by a cell if it comes within cell radius plus fibre radius (note fibre radius ~2 micron)
         double R = phenotype.geometry.radius + this->parameters.mRadius;
 
-		// as per PhysiCell
-		static double simple_pressure_scale = 0.027288820670331;
+        if (this->parameters.X_crosslink_count == 0 ) {
+            // as per PhysiCell
+            static double simple_pressure_scale = 0.027288820670331;
 
-		double temp_r = 0;
-		if (distance > R) {
-			temp_r = 0;
-		} else {
-			// temp_r = 1 - distance/R;
-			temp_r = -distance; // -d
-			temp_r /= R; // -d/R
-			temp_r += 1.0; // 1-d/R
-			temp_r *= temp_r; // (1-d/R)^2
+            double temp_r = 0;
+            if (distance > R) {
+                temp_r = 0;
+            } else {
+                // temp_r = 1 - distance/R;
+                temp_r = -distance; // -d
+                temp_r /= R; // -d/R
+                temp_r += 1.0; // 1-d/R
+                temp_r *= temp_r; // (1-d/R)^2
 
-			// add the relative pressure contribution NOT SURE IF NEEDED
-			state.simple_pressure += (temp_r / simple_pressure_scale);
+                // add the relative pressure contribution NOT SURE IF NEEDED
+                state.simple_pressure += (temp_r / simple_pressure_scale);
 
-			double effective_repulsion = sqrt(phenotype.mechanics.cell_cell_repulsion_strength *
-												(*other_agent).phenotype.mechanics.cell_cell_repulsion_strength);
-			temp_r *= effective_repulsion;
-		}
+                double effective_repulsion = sqrt(phenotype.mechanics.cell_cell_repulsion_strength *
+                                                  (*other_agent).phenotype.mechanics.cell_cell_repulsion_strength);
+                temp_r *= effective_repulsion;
+            }
 
-		if (fabs(temp_r) < 1e-16) { return; }
-		temp_r /= distance;
-		naxpy(&velocity, temp_r, displacement);
-        
+            if (fabs(temp_r) < 1e-16) { return; }
+            temp_r /= distance;
+            naxpy(&velocity, temp_r, displacement);
+        }
+        /* for snow plough example uncomment to here: */
+
+        /* for hinge example uncomment from here: */
+        if (this->parameters.X_crosslink_count == 1 && distance <= R) {
+            int index = 0;
+            //if (std::find(this->state.crosslinkers.begin(), this->state.crosslinkers.end(), other_agent) != this->state.crosslinkers.end()) {
+                //while (this->state.crosslinkers[index] != other_agent) {
+                    //index++;
+                //}
+            //}
+            //std::cout << this->type_name << " " << this->ID << " cross links with " << this->state.crosslinkers[index]->ID << std::endl;
+
+            double angle = 0.01;
+            nearest_point_on_fibre(this->position, this->state.crosslinkers[index], displacement);
+            std::vector<double> point(3, 0.0);
+            for (int i = 0; i < 2; i++) {
+                point[i] = this->position[i] - displacement[i];
+            }
+            this->position[0] = cos(0.1) * (this->position[0] - point[0]) - sin(angle) * (this->position[1] - point[1]) + point[0];
+            this->position[1] = sin(0.1) * (this->position[0] - point[0]) + cos(angle) * (this->position[1] - point[1]) + point[1];
+            this->state.orientation[0] = this->state.orientation[0] * cos(angle) - this->state.orientation[1] * sin(angle);
+            this->state.orientation[1] = this->state.orientation[0] * sin(angle) + this->state.orientation[1] * cos(angle);
+            normalize(&this->state.orientation);
+        }
+        /* for hinge example uncomment to here: */
         return;
     }
 
