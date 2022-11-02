@@ -149,6 +149,7 @@ class Cell_State
 	std::vector<Cell*> attached_cells; 
 
 	std::vector<Cell*> neighbors; 
+	std::list<int> voxels;
 	std::vector<double> orientation;
 	
 	double simple_pressure; 

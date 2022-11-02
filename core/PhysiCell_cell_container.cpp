@@ -226,10 +226,11 @@ void Cell_Container::update_all_cells(double t, double phenotype_dt_ , double me
 		#pragma omp parallel for 
 		for( int i=0; i < (*all_cells).size(); i++ )
 		{
-			Cell* pC = (*all_cells)[i]; 
+			Cell* pC = (*all_cells)[i];
+			pC->state.voxels.clear();
 			if( !pC->is_out_of_domain )
 			{
-				register_fibre_voxels(pC); //new for PhysiMess
+				pC->state.voxels = register_fibre_voxels(pC); //new for PhysiMess
 			}
 		}
 
