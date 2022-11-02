@@ -3249,24 +3249,48 @@ void deregister_fibre_voxels(Cell *pCell) {
     }
 }
 
+std::list<int> find_agent_voxels(Cell *pCell) {
 
-
+    /* this code is for creating a list of all voxels which either contain the agent
+     * or are neighboring voxels of the voxel containing the agent */
+    std::list<int> all_agent_voxels_to_test;
+    for (int x: pCell->state.voxels) {
+        all_agent_voxels_to_test.push_back(x);
+        std::vector<int>::iterator xx;
+        std::vector<int>::iterator x_end =
+                pCell->get_container()->underlying_mesh.moore_connected_voxel_indices[x].end();
+        for (xx = pCell->get_container()->underlying_mesh.moore_connected_voxel_indices[x].begin();
+             xx != x_end; ++xx) {
+            all_agent_voxels_to_test.push_back(*xx);
+        }
+    }
+    // get rid of any duplicated voxels
+    all_agent_voxels_to_test.sort();
+    all_agent_voxels_to_test.unique();
+    
+    return all_agent_voxels_to_test;
+}
 
 void find_agent_neighbors(Cell *pCell) {
-	
-	//First check the neighbors in my current voxel
-	for (auto neighbor: pCell->get_container()->agent_grid[pCell->get_current_mechanics_voxel_index()]) {
-		if (neighbor != pCell)
-			pCell->state.neighbors.push_back(neighbor);
-	}
 
-	for (auto neighbor_voxel_index: pCell->get_container()->underlying_mesh.moore_connected_voxel_indices[pCell->get_current_mechanics_voxel_index()]) {
-		if (!is_neighbor_voxel(pCell, pCell->get_container()->underlying_mesh.voxels[pCell->get_current_mechanics_voxel_index()].center, pCell->get_container()->underlying_mesh.voxels[neighbor_voxel_index].center, neighbor_voxel_index)) {
-			for (auto neighbor: pCell->get_container()->agent_grid[neighbor_voxel_index])
-			pCell->state.neighbors.push_back(neighbor);
-		}
-	}
+    /* this code is for finding all neighbors of an agent: first we call find_agent_voxels
+     *  to create a list of all the voxels to test, then we search for agents in those voxels */
+    std::list<int> voxels_to_test = find_agent_voxels(pCell);
 
+    //std::cout << "Agent " << pCell->ID << " is tested in voxels: " ;
+    for (int x: voxels_to_test) {
+        //std::cout << x << " " ;
+        std::vector<Cell *>::iterator neighbor;
+        std::vector<Cell *>::iterator end = pCell->get_container()->agent_grid[x].end();
+        for (neighbor = pCell->get_container()->agent_grid[x].begin(); neighbor != end; ++neighbor) {
+            // do not include the neighbor if it is the agent itself or if it is in the list already
+            if (std::find(pCell->state.neighbors.begin(), pCell->state.neighbors.end(), (*neighbor)) ==
+                pCell->state.neighbors.end() && pCell != (*neighbor)) {
+                pCell->state.neighbors.push_back(*neighbor);
+            }
+        }
+    }
+    //std::cout << std::endl;
 }
 
 };
