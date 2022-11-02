@@ -631,11 +631,35 @@ void standard_update_cell_velocity( Cell* pCell, Phenotype& phenotype, double dt
 		pCell->add_potentials(neighbor);
 	}
 
+	int stuck_threshold = 10;
+	int unstuck_threshold = 1;
 
+	if (pCell->parameters.stuck_counter == stuck_threshold){
+		/*std::cout << "!HELP! cell " << pCell->ID << " gets stuck at time "
+		<< PhysiCell_globals.current_time << std::endl;*/
+		pCell->parameters.stuck_counter = 0;
+		pCell->parameters.unstuck_counter = 1;
+	}
+
+	if (1 <= pCell->parameters.unstuck_counter && pCell->parameters.unstuck_counter < unstuck_threshold+1) {
+		/*std::cout << " getting unstuck at time "
+		<< PhysiCell_globals.current_time << std::endl;*/
+		pCell->parameters.unstuck_counter++;
+		pCell->force_update_motility_vector(dt);
+		pCell->velocity += phenotype.motility.motility_vector;
+	}
+	else {
 	pCell->update_motility_vector(dt); 
 	pCell->velocity += phenotype.motility.motility_vector; 
-	
-	return; 
+	}
+
+	if(pCell->parameters.unstuck_counter == unstuck_threshold+1){
+		pCell->parameters.unstuck_counter = 0;
+	}
+
+
+	return;
+
 }
 
 void standard_add_basement_membrane_interactions( Cell* pCell, Phenotype& phenotype, double dt )
