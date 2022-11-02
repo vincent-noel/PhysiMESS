@@ -910,6 +910,62 @@ void Cell::copy_function_pointers(Cell* copy_me)
 	return; 
 }
 
+std::vector<double> Cell::nearest_point_on_fibre(std::vector<double> point, Cell *fibre_agent,
+                                                 std::vector<double> &displacement) {
+
+    // don't bother if the "fibre_agent" is not a fibre
+    if ((*fibre_agent).type_name != "fibre") { return displacement; }
+
+    double fibre_length = 2 * (*fibre_agent).parameters.mLength;
+    // vector pointing from one endpoint of "fibre_agent" to "point"
+    std::vector<double> fibre_to_agent(3, 0.0);
+    // |fibre_to_agent| squared
+    double fibre_to_agent_length_squared = 0;
+    // scalar product fibre_to_agent * fibre_vector
+    double fibre_to_agent_dot_fibre_vector = 0;
+
+    double distance = 0;
+    for (unsigned int i = 0; i < 3; i++) {
+        fibre_to_agent[i] = point[i] - ((*fibre_agent).position[i]
+                - (*fibre_agent).parameters.mLength * (*fibre_agent).state.orientation[i]);
+        fibre_to_agent_length_squared += fibre_to_agent[i] * fibre_to_agent[i];
+        fibre_to_agent_dot_fibre_vector += fibre_to_agent[i] * fibre_length * (*fibre_agent).state.orientation[i];
+    }
+
+    // "point" is closest to the selected endpoint of "fibre_agent"
+    if (fibre_to_agent_dot_fibre_vector < 0.) {
+        for (int i = 0; i < 3; i++) {
+            displacement[i] = fibre_to_agent[i];
+        }
+        //std::cout << "The point is closest to the start of the fibre" << std::endl;
+        //std::cout << " Displacement: " << displacement << std::endl;
+    }
+    // “point” is closest to the other endpoint of “fibre_agent”
+    else if (fibre_to_agent_dot_fibre_vector > fibre_length * fibre_length) {
+        for (unsigned int i = 0; i < 3; i++) {
+            displacement[i] = point[i] - ((*fibre_agent).position[i]
+                                              + (*fibre_agent).parameters.mLength * (*fibre_agent).state.orientation[i]);
+        }
+        //std::cout << "The point is closest to the end of the fibre" << std::endl;
+        //std::cout << " Displacement: " << displacement << std::endl;
+    }
+    // “point” is closest to a point along “fibre_agent”
+    else {
+        double fibre_to_agent_length_cos_alpha_squared =
+                fibre_to_agent_dot_fibre_vector * fibre_to_agent_dot_fibre_vector /
+                (fibre_length * fibre_length);
+        double l = sqrt(fibre_to_agent_length_cos_alpha_squared);
+        for (unsigned int i = 0; i < 3; i++) {
+            displacement[i] = fibre_to_agent[i] - l * (*fibre_agent).state.orientation[i];
+        }
+        //std::cout << "The point is closest to a point along the fibre" << std::endl;
+        //std::cout << " Displacement: " << displacement << std::endl;
+    }
+
+    // the function returns the displacement vector
+    return displacement;
+}
+
 void Cell::add_potentials(Cell* other_agent)
 {
 	// if( this->ID == other_agent->ID )
