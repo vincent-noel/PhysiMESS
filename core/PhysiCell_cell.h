@@ -117,6 +117,9 @@ class Cell_Parameters
 
     int fail_count = 0; // PhysiMESS
 
+    double stuck_counter = 0; // PhysiMESS
+    double unstuck_counter = 0; // PhysiMESS
+
 
     int X_crosslink_count; //int T_crosslink_count; // PhysiMESS
 
