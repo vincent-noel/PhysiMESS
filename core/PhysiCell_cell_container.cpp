@@ -222,6 +222,7 @@ void Cell_Container::update_all_cells(double t, double phenotype_dt_ , double me
 		{
 			Cell* pC = (*all_cells)[i];
 			pC->state.neighbors.clear();
+			pC->state.crosslinkers.clear();
 			if( !pC->is_out_of_domain )
 			{
 				find_agent_neighbors(pC); //new for PhysiMess
@@ -244,6 +245,14 @@ void Cell_Container::update_all_cells(double t, double phenotype_dt_ , double me
 						
 			if( pC->functions.custom_cell_rule && pC->is_out_of_domain == false )
 			{ pC->functions.custom_cell_rule( pC,pC->phenotype,time_since_last_mechanics ); }
+		}
+
+		// determine and add crosslinks
+		#pragma omp parallel for
+		for( int i=0; i < (*all_cells).size(); i++ )
+		{
+			Cell* pC = (*all_cells)[i];
+			add_crosslinks(pC); //new for PhysiMess
 		}
 		
 		// update velocities 
