@@ -186,6 +186,7 @@ class Cell : public Basic_Agent
 	void advance_bundled_phenotype_functions( double dt_ ); 
 	
 	void add_potentials(Cell*);       // Add repulsive and adhesive forces.
+    std::vector<double> nearest_point_on_fibre(std::vector<double> point, Cell* , std::vector<double>& displacement); // PhysiMESS
 	void set_previous_velocity(double xV, double yV, double zV);
 	int get_current_mechanics_voxel_index();
 	void turn_off_reactions(double); 		  // Turn off all the reactions of the cell
