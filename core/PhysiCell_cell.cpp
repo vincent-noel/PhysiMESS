@@ -962,6 +962,10 @@ void Cell::add_potentials(Cell* other_agent)
 	if( other_agent->phenotype.volume.total < 1e-15 )
 	{ std::cout << "zero size cell in mechanics!" << std::endl; return; }
 */
+    // two non-fibre agents interacting - as per PhysiCell
+    if (this->type_name != "fibre" && (*other_agent).type_name != "fibre") {
+        //std::cout << " cell-cell interaction " << std::endl;
+
 	// 12 uniform neighbors at a close packing distance, after dividing out all constants
 	static double simple_pressure_scale = 0.027288820670331; // 12 * (1 - sqrt(pi/(2*sqrt(3))))^2 
 	// 9.820170012151277; // 12 * ( 1 - sqrt(2*pi/sqrt(3)))^2
@@ -1054,9 +1058,155 @@ void Cell::add_potentials(Cell* other_agent)
 	axpy( &velocity , temp_r , displacement ); 
 	
 	
-	// state.neighbors.push_back(other_agent); // new 1.8.0
+	//state.neighbors.push_back(other_agent); // new 1.8.0
 	
 	return;
+	}
+
+    // cell interacting with a fibre
+    else if (this->type_name != "fibre" && (*other_agent).type_name == "fibre") {
+
+        //std::cout << "cell-fibre interaction " << std::endl;
+
+        double distance = 0.0;
+        nearest_point_on_fibre(this->position, other_agent, displacement);
+        for (int index = 0; index < 3; index++) {
+            distance += displacement[index] * displacement[index];
+        }
+        distance = std::max(sqrt(distance), 0.00001);
+        /*if( this->phenotype.motility.is_motile) {
+            std::cout << " determining distance from " << this->type_name << " " << this->ID << " to "
+                      << (*other_agent).type_name << " " << (*other_agent).ID
+                      << "   the distance is " << distance << std::endl;
+        }*/
+
+        // as per PhysiCell
+        static double simple_pressure_scale = 0.027288820670331;
+
+        // check distance relative repulsion and adhesion distances
+        // cell should repel from a fibre if it comes within cell radius plus fibre radius (note fibre radius ~2 micron)
+        double R = phenotype.geometry.radius + (*other_agent).parameters.mRadius;
+        // cell should feel adhesion over
+        double max_interactive_distance =
+                phenotype.mechanics.relative_maximum_adhesion_distance * phenotype.geometry.radius +
+                (*other_agent).phenotype.mechanics.relative_maximum_adhesion_distance *
+                (*other_agent).parameters.mRadius;
+
+        // First Repulsion as per PhysiCell
+        double temp_r = 0;
+        if (distance > R) {
+            temp_r = 0;
+        } else {
+            // temp_r = 1 - distance/R;
+            temp_r = -distance; // -d
+            temp_r /= R; // -d/R
+            temp_r += 1.0; // 1-d/R
+            temp_r *= temp_r; // (1-d/R)^2
+
+            // add the relative pressure contribution NOT SURE IF NEEDED
+            state.simple_pressure += (temp_r / simple_pressure_scale);
+
+            double effective_repulsion = sqrt(phenotype.mechanics.cell_cell_repulsion_strength *
+                                              (*other_agent).phenotype.mechanics.cell_cell_repulsion_strength);
+            temp_r *= effective_repulsion;
+        }
+
+        if (fabs(temp_r) < 1e-16) { return; }
+        temp_r /= distance;
+
+        axpy(&velocity, temp_r, displacement);
+
+        //Then additional repulsion/adhesion as per Cicely's code
+        double fibre_adhesion = 0;
+        double fibre_repulsion = 0;
+        if (distance < max_interactive_distance) {
+            double cell_velocity_dot_fibre_direction = 0.;
+            for (unsigned int j = 0; j < 3; j++) {
+                cell_velocity_dot_fibre_direction += (*other_agent).state.orientation[j] * previous_velocity[j];
+            }
+            double cell_velocity = 0;
+            for (unsigned int j = 0; j < velocity.size(); j++) {
+                cell_velocity += previous_velocity[j] * previous_velocity[j];
+            }
+            cell_velocity = std::max(sqrt(cell_velocity), 1e-8);
+
+
+            double p_exponent = 1.;
+            double q_exponent = 1.;
+            double xi = fabs(cell_velocity_dot_fibre_direction) / (cell_velocity);
+            double xip = pow(xi, p_exponent);
+            double xiq = pow((1 - xi * xi), q_exponent);
+
+            fibre_adhesion = (*other_agent).parameters.mVelocityAdhesion * xip *
+                             (1 - cell_velocity / this->parameters.mCellVelocityMaximum);
+
+            fibre_repulsion = (*other_agent).parameters.mVelocityContact * xiq;
+
+            axpy(&velocity, fibre_adhesion, (*other_agent).state.orientation);
+            naxpy(&velocity, fibre_repulsion, previous_velocity);
+        }
+
+    }
+
+    // fibre interacting with a cell
+    else if (this->type_name == "fibre" && (*other_agent).type_name != "fibre") {
+        //std::cout << "fibre-cell interaction" << std::endl;
+
+        /* for snow plough example uncomment from here: */
+        double distance = 0.0;
+        nearest_point_on_fibre((*other_agent).position, this, displacement);
+        for (int index = 0; index < 3; index++) {
+            distance += displacement[index] * displacement[index];
+        }
+        distance = std::max(sqrt(distance), 0.00001);
+        //std::cout << " determining distance from " << this->type_name << " " << this->ID <<
+        // " to " << (*other_agent).type_name << " " << (*other_agent).ID << "   the distance is " << distance << std::endl;
+        // check distance relative repulsion and adhesion distances
+        // fibre should repel and be pushed by a cell if it comes within cell radius plus fibre radius (note fibre radius ~2 micron)
+        double R = phenotype.geometry.radius + this->parameters.mRadius;
+
+		// as per PhysiCell
+		static double simple_pressure_scale = 0.027288820670331;
+
+		double temp_r = 0;
+		if (distance > R) {
+			temp_r = 0;
+		} else {
+			// temp_r = 1 - distance/R;
+			temp_r = -distance; // -d
+			temp_r /= R; // -d/R
+			temp_r += 1.0; // 1-d/R
+			temp_r *= temp_r; // (1-d/R)^2
+
+			// add the relative pressure contribution NOT SURE IF NEEDED
+			state.simple_pressure += (temp_r / simple_pressure_scale);
+
+			double effective_repulsion = sqrt(phenotype.mechanics.cell_cell_repulsion_strength *
+												(*other_agent).phenotype.mechanics.cell_cell_repulsion_strength);
+			temp_r *= effective_repulsion;
+		}
+
+		if (fabs(temp_r) < 1e-16) { return; }
+		temp_r /= distance;
+		naxpy(&velocity, temp_r, displacement);
+        
+        return;
+    }
+
+    // fibre interacting with a fibre
+    else if (this->type_name == "fibre" && (*other_agent).type_name == "fibre") {
+
+        /* probably want something here to model tension along fibres
+         * this will be strong tension along the fibre for those fibres with a crosslink
+         * and weak tension with background ECM */
+        return;
+    }
+
+    // one last check - do nothing but spew out some warning
+    else {
+        std::cout << " WARNING: interaction between errant cell-types has been called " << std::endl;
+        return;
+    }
 }
 
 Cell* create_cell( void )

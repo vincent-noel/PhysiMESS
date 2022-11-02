@@ -116,6 +116,13 @@ class Cell_Parameters
     double mRadius = 0; // PhysiMESS
 
     int fail_count = 0; // PhysiMESS
+
+    double mVelocityAdhesion = 0; // PhysiMESS
+
+    double mVelocityContact = 0; // PhysiMESS
+
+    double mCellVelocityMaximum= 0; // PhysiMESS
+	
 	Cell_Parameters(); 
 }; 
 
