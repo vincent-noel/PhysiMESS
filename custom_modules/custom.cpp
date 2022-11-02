@@ -171,6 +171,10 @@ void setup_tissue( void ){
 
 	for( int i=0; i < (*all_cells).size(); i++ ){
 
+        // initialise the following parameters for all cells regardless of type
+		(*all_cells)[i]->parameters.mCellVelocityMaximum = parameters.doubles("cell_velocity_max");
+        (*all_cells)[i]->parameters.mVelocityAdhesion = parameters.doubles("vel_adhesion");
+        (*all_cells)[i]->parameters.mVelocityContact = parameters.doubles("vel_contact");
         const auto agentname = std::string((*all_cells)[i]->type_name);
         const auto fibre = std::string("fibre");
         const auto fiber = std::string("fiber");
@@ -325,6 +329,9 @@ void setup_tissue( void ){
                     position[2] = Zmin + UniformRandom() * Zrange;
 
                     pC = create_cell(*pCD);
+                    pC->parameters.mCellVelocityMaximum = parameters.doubles("cell_velocity_max");
+                    pC->parameters.mVelocityAdhesion = parameters.doubles("vel_adhesion");
+                    pC->parameters.mVelocityContact = parameters.doubles("vel_contact");
                     pC->assign_position(position);
                 }
             }
@@ -340,6 +347,9 @@ void setup_tissue( void ){
 
                     pC = create_cell(*pCD);
 
+                    pC->parameters.mCellVelocityMaximum = parameters.doubles("cell_velocity_max");
+                    pC->parameters.mVelocityAdhesion = parameters.doubles("vel_adhesion");
+                    pC->parameters.mVelocityContact = parameters.doubles("vel_contact");
                     pC->parameters.mLength = NormalRandom(fibre_length, 0.0) / 2.0;
                     pC->parameters.mRadius = fibre_radius;
 
