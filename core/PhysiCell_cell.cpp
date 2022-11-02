@@ -244,6 +244,51 @@ Cell_State::Cell_State()
 	return; 
 }
 
+void Cell::force_update_motility_vector(double dt_) {
+    if (!phenotype.motility.is_motile) {
+        phenotype.motility.motility_vector.assign(3, 0.0);
+        return;
+    }
+
+    // force cell to update its motility because it is stuck
+    // choose a uniformly random unit vector
+    double temp_angle = 6.28318530717959 * UniformRandom();
+    double temp_phi = 3.1415926535897932384626433832795 * UniformRandom();
+
+    double sin_phi = sin(temp_phi);
+    double cos_phi = cos(temp_phi);
+
+    if (phenotype.motility.restrict_to_2D) {
+        sin_phi = 1.0;
+        cos_phi = 0.0;
+    }
+
+    std::vector<double> randvec;
+    randvec.resize(3, sin_phi);
+
+    randvec[0] *= cos(temp_angle); // cos(theta)*sin(phi)
+    randvec[1] *= sin(temp_angle); // sin(theta)*sin(phi)
+    randvec[2] = cos_phi; //  cos(phi)
+
+    // if the update_bias_vector function is set, use it
+    /*if (functions.update_migration_bias) {
+    functions.update_migration_bias(this, phenotype, dt_);
+    }*/
+
+    //phenotype.motility.motility_vector *= -1.0;//phenotype.motility.migration_bias_direction; // motiltiy = bias_vector
+    //phenotype.motility.motility_vector *= phenotype.motility.migration_bias; // motility = bias*bias_vector
+
+    double one_minus_bias = 1.0;// - phenotype.motility.migration_bias;
+
+    axpy(&(phenotype.motility.motility_vector), one_minus_bias,randvec); // motility = (1-bias)*randvec + bias*bias_vector
+
+    normalize(&(phenotype.motility.motility_vector));
+
+    phenotype.motility.motility_vector *= phenotype.motility.migration_speed;
+
+    return;
+}
+
 void Cell::update_motility_vector( double dt_ )
 {
 	if( phenotype.motility.is_motile == false )

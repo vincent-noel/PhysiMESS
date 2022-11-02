@@ -198,6 +198,7 @@ class Cell : public Basic_Agent
 	Cell_State state; 
 	Phenotype phenotype; 
 	
+    void force_update_motility_vector(double dt_); // PhysiMESS
 	void update_motility_vector( double dt_ );
 	void advance_bundled_phenotype_functions( double dt_ ); 
 	
