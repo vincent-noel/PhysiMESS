@@ -823,6 +823,18 @@ void Cell::update_position( double dt )
 	std::vector<double> old_position(position); 
 	axpy( &position , d1 , velocity );  
 	axpy( &position , d2 , previous_velocity );  
+
+    double movement_threshold = 0.05;
+    if (this->type_name != "fibre" && phenotype.motility.is_motile) {
+        if (dist(old_position, position) < movement_threshold) {
+            this->parameters.stuck_counter++;
+            /*std::cout << "stuck counter is " << this->parameters.stuck_counter
+                      << " at time " << PhysiCell_globals.current_time << std::endl;*/
+        } else {
+            this->parameters.stuck_counter = 0;
+        }
+    }
+
 	// overwrite previous_velocity for future use 
 	// if(sqrt(dist(old_position, position))>3* phenotype.geometry.radius)
 		// std::cout<<sqrt(dist(old_position, position))<<"old_position: "<<old_position<<", new position: "<< position<<", velocity: "<<velocity<<", previous_velocity: "<< previous_velocity<<std::endl;
