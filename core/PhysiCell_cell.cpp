@@ -998,7 +998,7 @@ void Cell::add_potentials(Cell* other_agent)
 	axpy( &velocity , temp_r , displacement ); 
 	
 	
-	state.neighbors.push_back(other_agent); // new 1.8.0
+	// state.neighbors.push_back(other_agent); // new 1.8.0
 	
 	return;
 }
@@ -3250,6 +3250,24 @@ void deregister_fibre_voxels(Cell *pCell) {
 }
 
 
+
+
+void find_agent_neighbors(Cell *pCell) {
+	
+	//First check the neighbors in my current voxel
+	for (auto neighbor: pCell->get_container()->agent_grid[pCell->get_current_mechanics_voxel_index()]) {
+		if (neighbor != pCell)
+			pCell->state.neighbors.push_back(neighbor);
+	}
+
+	for (auto neighbor_voxel_index: pCell->get_container()->underlying_mesh.moore_connected_voxel_indices[pCell->get_current_mechanics_voxel_index()]) {
+		if (!is_neighbor_voxel(pCell, pCell->get_container()->underlying_mesh.voxels[pCell->get_current_mechanics_voxel_index()].center, pCell->get_container()->underlying_mesh.voxels[neighbor_voxel_index].center, neighbor_voxel_index)) {
+			for (auto neighbor: pCell->get_container()->agent_grid[neighbor_voxel_index])
+			pCell->state.neighbors.push_back(neighbor);
+		}
+	}
+
+}
 
 };
 
