@@ -238,6 +238,17 @@ void Cell_Container::update_all_cells(double t, double phenotype_dt_ , double me
 		for( int i=0; i < (*all_cells).size(); i++ )
 		{
 			Cell* pC = (*all_cells)[i];
+			pC->state.neighbors.clear();
+			if( !pC->is_out_of_domain )
+			{
+				find_agent_neighbors(pC); //new for PhysiMess
+			}
+		}
+
+		#pragma omp parallel for
+		for( int i=0; i < (*all_cells).size(); i++ )
+		{
+			Cell* pC = (*all_cells)[i];
 			if( !pC->is_out_of_domain )
 			{
 				deregister_fibre_voxels(pC); //new for PhysiMess
