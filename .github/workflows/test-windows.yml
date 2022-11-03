@@ -28,3 +28,15 @@ jobs:
     - name: Run all examples
       run: |
         .\\project config\\mymodel.xml
+        .\\project config\\Cell_Fibre_Potentials\\mymodel_potentials.xml
+        .\\project config\\Cell_Stuck\\mymodel_cell_stuck_test.xml
+        .\\project config\\Fibre_Crosslinks\\mymodel_fibres_crosslink_test.xml
+        .\\project config\\Fibre_Crosslinks\\mymodel_migration_through_crosslinks.xml
+        .\\project config\\Fibre_Degradation\\mymodel_fibre_degradation.xml
+        .\\project config\\Fibre_Initialisation\\mymodel_initialisation.xml
+        .\\project config\\Fibre_Initialisation\\mymodel_outofbounds.xml
+        .\\project config\\Matrix_Degradation\\mymodel_fibre_degradation.xml
+        .\\project config\\Nearest_point_on_fibre\\mymodel_nearest_point.xml
+        .\\project config\\Neighbours_in_voxels\\mymodel_neighbours.xml
+
+        
