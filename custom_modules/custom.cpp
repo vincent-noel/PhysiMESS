@@ -209,6 +209,21 @@ void setup_tissue( void ){
                 (*all_cells)[i]->state.orientation = UniformOnUnitSphere();
             }
 
+            //###########################################//
+            //   this bit a hack for PacMan and maze	 //
+            //###########################################//
+            if ((*all_cells)[i]->type_name == "fibre_vertical") {
+                (*all_cells)[i]->state.orientation[0] = 0.0;
+                (*all_cells)[i]->state.orientation[1] = 1.0;
+                (*all_cells)[i]->state.orientation[2] = 0.0;
+            }
+            if ((*all_cells)[i]->type_name == "fibre_horizontal") {
+                (*all_cells)[i]->state.orientation[0] = 1.0;
+                (*all_cells)[i]->state.orientation[1] = 0.0;
+                (*all_cells)[i]->state.orientation[2] = 0.0;
+            }
+            //###########################################//
+
             // start and end points of a fibre are calculated from fibre center
             double xs = (*all_cells)[i]->position[0] -
                         (*all_cells)[i]->parameters.mLength * (*all_cells)[i]->state.orientation[0];
