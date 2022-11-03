@@ -265,6 +265,16 @@ void Cell_Container::update_all_cells(double t, double phenotype_dt_ , double me
 			{ pC->functions.update_velocity( pC,pC->phenotype,time_since_last_mechanics ); }
 		}
 
+		// degrade any flagged fibres
+		#pragma omp parallel for
+		for( int i=0; i < (*all_cells).size(); i++ )
+		{
+			Cell* pC = (*all_cells)[i];
+			if (pC->parameters.degradation_flag){
+				pC->degrade_fibre(pC);
+			}
+		}
+
 		// new March 2022: 
 		// run standard interactions (phagocytosis, attack, fusion) here 
 		#pragma omp parallel for 
