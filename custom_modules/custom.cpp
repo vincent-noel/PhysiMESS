@@ -175,6 +175,8 @@ void setup_tissue( void ){
 		(*all_cells)[i]->parameters.mCellVelocityMaximum = parameters.doubles("cell_velocity_max");
         (*all_cells)[i]->parameters.mVelocityAdhesion = parameters.doubles("vel_adhesion");
         (*all_cells)[i]->parameters.mVelocityContact = parameters.doubles("vel_contact");
+        (*all_cells)[i]->parameters.fibredegradation = parameters.bools("fibre_degradation");
+
         const auto agentname = std::string((*all_cells)[i]->type_name);
         const auto fibre = std::string("fibre");
         const auto fiber = std::string("fiber");
@@ -332,6 +334,7 @@ void setup_tissue( void ){
                     pC->parameters.mCellVelocityMaximum = parameters.doubles("cell_velocity_max");
                     pC->parameters.mVelocityAdhesion = parameters.doubles("vel_adhesion");
                     pC->parameters.mVelocityContact = parameters.doubles("vel_contact");
+                    pC->parameters.fibredegradation = parameters.bools("fibre_degradation");
                     pC->assign_position(position);
                 }
             }
@@ -350,6 +353,8 @@ void setup_tissue( void ){
                     pC->parameters.mCellVelocityMaximum = parameters.doubles("cell_velocity_max");
                     pC->parameters.mVelocityAdhesion = parameters.doubles("vel_adhesion");
                     pC->parameters.mVelocityContact = parameters.doubles("vel_contact");
+                    pC->parameters.fibredegradation = parameters.bools("fibre_degradation");
+
                     pC->parameters.mLength = NormalRandom(fibre_length, 0.0) / 2.0;
                     pC->parameters.mRadius = fibre_radius;
 

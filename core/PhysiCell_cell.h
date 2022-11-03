@@ -112,6 +112,8 @@ class Cell_Parameters
 	double max_necrosis_rate; // deprecate
 	int necrosis_type; // deprecate 
 	
+    int fibredegradation = 0; // PhysiMESS
+
     double mLength = 0; // PhysiMESS
     double mRadius = 0; // PhysiMESS
 
@@ -120,6 +122,7 @@ class Cell_Parameters
     double stuck_counter = 0; // PhysiMESS
     double unstuck_counter = 0; // PhysiMESS
 
+    bool degradation_flag = false; // PhysiMESS
 
     int X_crosslink_count; //int T_crosslink_count; // PhysiMESS
 
@@ -204,6 +207,7 @@ class Cell : public Basic_Agent
 	
 	void add_potentials(Cell*);       // Add repulsive and adhesive forces.
 	void check_fibre_crosslinks(Cell*); // PhysiMESS for use in fibre crosslink models
+    void degrade_fibre(Cell*); // PhysiMESS for use in fibre degradation models
 	std::vector<double> nearest_point_on_fibre(std::vector<double> point, Cell* , std::vector<double>& displacement); // PhysiMESS
 	void set_previous_velocity(double xV, double yV, double zV);
 	int get_current_mechanics_voxel_index();

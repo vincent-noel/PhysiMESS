@@ -969,6 +969,38 @@ void Cell::copy_function_pointers(Cell* copy_me)
 	return; 
 }
 
+void Cell::degrade_fibre(Cell *fibre_to_degrade) {
+
+    // don't degrade anything that is not a fibre
+    if ((*fibre_to_degrade).type_name != "fibre") { return; }
+
+    // attempt to make this thread safe - NOTE IT ISN'T SO MUST BE A PROBLEM
+    //#pragma omp critical
+    //{
+    // release any attached cells
+    (*fibre_to_degrade).remove_all_attached_cells();
+
+    //find index of fibre to be degraded
+    int index = -1;
+    for (int n = 0; n < (*all_cells).size(); n++) {
+        if ((*all_cells)[n] == fibre_to_degrade) {
+            index = n;
+        }
+    }
+
+    // swap last item to index location
+    (*all_cells)[(*all_cells).size() - 1]->index = index;
+    (*all_cells)[index] = (*all_cells)[(*all_cells).size() - 1];
+    // shrink the vector
+    (*all_cells).pop_back();
+
+    // remove fibre from agent grid
+    (*fibre_to_degrade).get_container()->remove_agent(fibre_to_degrade);
+    // de-allocate (delete) the cell;
+    fibre_to_degrade->flag_for_removal();
+    //}
+}
+
 std::vector<double> Cell::nearest_point_on_fibre(std::vector<double> point, Cell *fibre_agent,
                                                  std::vector<double> &displacement) {
 
@@ -1375,6 +1407,24 @@ void Cell::add_potentials(Cell* other_agent)
 
             axpy(&velocity, fibre_adhesion, (*other_agent).state.orientation);
             naxpy(&velocity, fibre_repulsion, previous_velocity);
+
+            int stuck_threshold = 10;
+            if (this->parameters.stuck_counter >= stuck_threshold) {
+                //std::cout << "Cell " << this->ID << " is stuck at time " << PhysiCell_globals.current_time
+                          //<< " near fibre " << (*other_agent).ID  << std::endl;
+                displacement *= -1.0/distance;
+                double dot_product = DotProduct(displacement, phenotype.motility.motility_vector);
+                if (this->parameters.fibredegradation &&
+                    dot_product >= 0) {
+                    double rand_degradation = UniformRandom();
+                    double prob_degradation = 0.1;
+                    if (rand_degradation <= prob_degradation) {
+                        //std::cout << " --------> fibre " << (*other_agent).ID << " is flagged for degradation " << std::endl;
+                        (*other_agent).parameters.degradation_flag = true;
+                        this->parameters.stuck_counter = 0;
+                    }
+                }
+            }
         }
 
     }
