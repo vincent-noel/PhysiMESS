@@ -22,23 +22,13 @@ jobs:
     - name: Run all examples
       run: |
         ./project config/mymodel.xml
-
-  build_physiboss_cell_lines:
-
-    runs-on: macos-11
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Install dependencies
-      run : brew install gcc@11
-      
-    - name: Build PhysiBoSS cell lines project
-      run: |
-        make physiboss-cell-lines-sample
-        make clean
-        make PHYSICELL_CPP=g++-11
-        
-    - name: Run PhysiBoSS cell lines project
-      run: |
-        ./PhysiBoSS_Cell_Lines
+        ./project config/Cell_Fibre_Potentials/mymodel_potentials.xml
+        ./project config/Cell_Stuck/mymodel_cell_stuck_test.xml
+        ./project config/Fibre_Crosslinks/mymodel_fibres_crosslink_test.xml
+        ./project config/Fibre_Crosslinks/mymodel_migration_through_crosslinks.xml
+        ./project config/Fibre_Degradation/mymodel_fibre_degradation.xml
+        ./project config/Fibre_Initialisation/mymodel_initialisation.xml
+        ./project config/Fibre_Initialisation/mymodel_outofbounds.xml
+        ./project config/Matrix_Degradation/mymodel_fibre_degradation.xml
+        ./project config/Nearest_point_on_fibre/mymodel_nearest_point.xml
+        ./project config/Neighbours_in_voxels/mymodel_neighbours.xml
